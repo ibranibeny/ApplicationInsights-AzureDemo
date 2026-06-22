@@ -1,0 +1,47 @@
+{
+    "folders": [
+        {
+            "name": "🚀 Azure Monitor Demo",
+            "path": "."
+        },
+        {
+            "name": "📁 Infrastructure",
+            "path": "./infra"
+        },
+        {
+            "name": "💻 Source Code",
+            "path": "./src"
+        },
+        {
+            "name": "📜 Scripts",
+            "path": "./scripts"
+        },
+        {
+            "name": "📚 Documentation",
+            "path": "./docs"
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            "**/.git": true,
+            "**/.DS_Store": true,
+            "**/node_modules": true,
+            "**/bin": true,
+            "**/obj": true,
+            "**/*.zip": true,
+            "**/logs-extracted": true,
+            "**/temp-logs": true
+        },
+        "powershell.codeFormatting.preset": "OTBS",
+        "powershell.scriptAnalysis.enable": true,
+        "markdown.extension.toc.updateOnSave": true,
+        "azure.resourceGroups.groupBy": "resourceType"
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-vscode.azure-tools",
+            "ms-vscode.powershell",
+            "davidanson.vscode-markdownlint"
+        ]
+    }
+}

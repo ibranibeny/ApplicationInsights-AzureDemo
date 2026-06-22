@@ -1,0 +1,43 @@
+name: 🧪 Validate ARM Templates
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-arm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Validate ARM Template
+      run: |
+        az deployment group validate \
+          --resource-group "temp-validation-rg" \
+          --template-file infra/main.json \
+          --parameters infra/main.parameters.json
+  
+  validate-scripts:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Test PowerShell Scripts
+      run: |
+        # Test script syntax
+        Get-ChildItem -Path scripts -Filter "*.ps1" | ForEach-Object {
+          $errors = $null
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $_.FullName -Raw), [ref]$errors)
+          if ($errors) {
+            Write-Error "Syntax errors in $($_.Name): $errors"
+            exit 1
+          }
+        }
+      shell: pwsh

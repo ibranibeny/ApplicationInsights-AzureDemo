@@ -1,0 +1,49 @@
+title: Azure Monitor & Application Insights Demo
+description: >-
+  A presentation-ready demo of Azure Monitor and Application Insights observability —
+  a .NET 8 API on Azure, fully instrumented, with deployment guidance and architecture diagrams.
+
+remote_theme: just-the-docs/just-the-docs@v0.7.0
+
+# Site URL (update baseurl if you fork under a different repo name)
+url: https://ibranibeny.github.io
+baseurl: "/ApplicationInsights-AzureDemo"
+
+# Render ```mermaid fenced diagrams in the docs
+mermaid:
+  version: "9.1.6"
+
+# Top-right auxiliary links
+aux_links:
+  "View on GitHub":
+    - "https://github.com/ibranibeny/ApplicationInsights-AzureDemo"
+aux_links_new_tab: true
+
+# Search
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 2
+
+# Footer
+footer_content: >-
+  Azure Monitor &amp; Application Insights Demo &middot; Microsoft Indonesia &middot;
+  Adopts <a href="https://github.com/mhuescar/azure-monitor-demo">mhuescar/azure-monitor-demo</a> (MIT).
+
+# Make external repo links open in a new tab
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# GitHub Pages plugin
+plugins:
+  - jekyll-remote-theme
+
+# Keep the workshop site focused on the curated pages below
+exclude:
+  - cli/
+  - portal/
+  - architecture-and-deployment-guidance.md
+  - deployment-run-log.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor/

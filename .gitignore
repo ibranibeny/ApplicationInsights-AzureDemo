@@ -1,0 +1,31 @@
+# Secrets & environment ---------------------------------------------------
+.env
+*.env
+!*.env.example
+# Local secret files (e.g. SQL admin password for deployment) — never commit
+.secrets/
+# Local parameter files that may contain real secrets (use *.local.json instead)
+**/main.parameters.local.json
+*.local.json
+
+# Build outputs -----------------------------------------------------------
+bin/
+obj/
+**/bin/Release/
+**/publish/
+deploy.zip
+node_modules/
+dist/
+build/
+
+# Azure / tooling ---------------------------------------------------------
+.azure/
+*.publishsettings
+
+# OS / editor -------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+*.log
