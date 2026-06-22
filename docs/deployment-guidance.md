@@ -209,18 +209,56 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\check-telemetry
 
 ## 7. How to deploy using PowerShell
 
-> **Which script do I run?** Use the scripts in the repository-root **`scripts/`** folder —
-> [`scripts/deploy-aci.ps1`](../scripts/deploy-aci.ps1) for the single-service demo, or
-> [`scripts/deploy-mesh-aci.ps1`](../scripts/deploy-mesh-aci.ps1) for the 5-service mesh.
+> **Which script do I run?** Use the scripts in the repository-root **`scripts/`** folder.
+> For a rich, multi-node **Application Map** (the demo most people want) deploy the
+> **5-service mesh** with [`scripts/deploy-mesh-aci.ps1`](../scripts/deploy-mesh-aci.ps1).
+> For a minimal single-node demo, use [`scripts/deploy-aci.ps1`](../scripts/deploy-aci.ps1).
 > Earlier App Service / Functions scripts (`deploy.ps1`, `demo-final.ps1`) have been
 > **removed** — they targeted a hosting model this demo no longer uses.
 
-### Option A — one scripted path (recommended)
+### Option A — 5-service mesh (recommended for the demo)
 
-From the repository root:
+Deploys **five** container instances that call each other so the Application Map renders a
+real distributed topology. Full details in section 10.
 
 ```powershell
-# Creates the RG, Log Analytics, App Insights, ACR, builds the image, runs ACI.
+# 1. Build the image once and create all 5 wired-up ACIs (svc-gateway → … → InMemory)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\deploy-mesh-aci.ps1"
+
+# 2. Drive traffic through the gateway (cascades through the whole chain)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\mesh-traffic.ps1" `
+  -GatewayUrl "http://<gateway-fqdn>:8080" -Count 50
+
+# 3. Confirm the map nodes + edges from telemetry
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\verify-mesh.ps1"
+```
+
+The script prints `MESH_RESULT=SUCCESS` and a `GATEWAY_URL=...` line when finished. What it
+deploys:
+
+```mermaid
+flowchart TD
+    S1["1 · Resource group + Log Analytics + App Insights"] --> S2["2 · Container Registry + az acr build"]
+    S2 --> S3["3 · svc-gateway · svc-orders · svc-payments<br/>svc-catalog · svc-inventory (5 ACIs)"]
+    S3 --> DONE["GATEWAY_URL = http://&lt;gateway-fqdn&gt;:8080"]
+
+    classDef step fill:#0F6CBD,stroke:#0A4A82,color:#ffffff,stroke-width:2px;
+    classDef monitor fill:#7A5AF8,stroke:#5733C2,color:#ffffff,stroke-width:2px;
+    classDef done fill:#107C10,stroke:#0B5A0B,color:#ffffff,stroke-width:2px;
+    class S1,S2 monitor;
+    class S3 step;
+    class DONE done;
+```
+
+> **Cost note:** the mesh runs 5 × (1 vCPU / 1.5 GB) container instances. Delete them when
+> done (see [Clean up](#clean-up)).
+
+### Option B — single-service deploy (minimal)
+
+Deploys **one** container instance — a single node plus its `InMemory` dependency.
+
+```powershell
+# Creates the RG, Log Analytics, App Insights, ACR, builds the image, runs 1 ACI.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\deploy-aci.ps1"
 ```
 
@@ -247,7 +285,7 @@ flowchart TD
 To re-deploy reusing existing resources (faster), use
 [`scripts/finish-aci.ps1`](../scripts/finish-aci.ps1).
 
-### Option B — Infrastructure as Code (ARM template)
+### Option C — Infrastructure as Code (ARM template)
 
 Because **ACI cannot pull an image that doesn't exist yet**, deploy in **three phases**.
 
