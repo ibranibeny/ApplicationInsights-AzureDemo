@@ -27,7 +27,7 @@ search:
 
 # Footer
 footer_content: >-
-  Azure Monitor &amp; Application Insights Demo &middot; Microsoft Indonesia &middot;
+  Azure Monitor &amp; Application Insights Demo &middot;
   Adopts <a href="https://github.com/mhuescar/azure-monitor-demo">mhuescar/azure-monitor-demo</a> (MIT).
 
 # Make external repo links open in a new tab
