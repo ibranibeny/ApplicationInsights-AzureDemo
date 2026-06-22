@@ -209,6 +209,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\check-telemetry
 
 ## 7. How to deploy using PowerShell
 
+> **Which script do I run?** Use the scripts in the repository-root **`scripts/`** folder —
+> [`scripts/deploy-aci.ps1`](../scripts/deploy-aci.ps1) for the single-service demo, or
+> [`scripts/deploy-mesh-aci.ps1`](../scripts/deploy-mesh-aci.ps1) for the 5-service mesh.
+> Earlier App Service / Functions scripts (`deploy.ps1`, `demo-final.ps1`) have been
+> **removed** — they targeted a hosting model this demo no longer uses.
+
 ### Option A — one scripted path (recommended)
 
 From the repository root:
