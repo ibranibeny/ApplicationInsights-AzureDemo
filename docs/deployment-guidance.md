@@ -24,6 +24,7 @@ nav_order: 2
 7. [How to deploy using PowerShell](#7-how-to-deploy-using-powershell)
 8. [What components are on it](#8-what-components-are-on-it)
 9. [Architecture (colored Mermaid diagrams)](#9-architecture-colored-mermaid-diagrams)
+10. [The 5-service mesh — `/api/call`, the map numbers & `InMemory`](#10-the-5-service-mesh--apicall-the-map-numbers--inmemory)
 
 ---
 
@@ -364,6 +365,88 @@ flowchart LR
     classDef data fill:#C43E1C,stroke:#8A2B12,color:#ffffff,stroke-width:2px;
     classDef ext fill:#107C10,stroke:#0B5A0B,color:#ffffff,stroke-width:2px;
 ```
+
+---
+
+## 10. The 5-service mesh — `/api/call`, the map numbers & `InMemory`
+
+The optional mesh deploys **five separate container instances** running the *same* image,
+each with a distinct `cloud_RoleName` (`svc-gateway`, `svc-orders`, `svc-payments`,
+`svc-catalog`, `svc-inventory`). One endpoint — **`GET /api/call`** — turns them into a
+real distributed system on the **Application Map**.
+
+### How `/api/call` fans out to every service
+
+When you hit the **gateway's** `/api/call`, it reads `DOWNSTREAM_SERVICES` and calls each
+downstream service's `/api/call`, which in turn calls *its* downstream — a cascade. The App
+Insights SDK auto-tracks every outbound HTTP call as a **dependency** and propagates W3C
+trace context, so the whole chain correlates into one operation and renders as connected
+**nodes + edges**.
+
+```mermaid
+flowchart LR
+    USER(["You / curl loop<br/>GET /api/call"]) -->|HTTP| GW["svc-gateway"]
+    GW -->|HTTP /api/call| OR["svc-orders"]
+    GW -->|HTTP /api/call| CT["svc-catalog"]
+    OR -->|HTTP /api/call| PM["svc-payments"]
+    CT -->|HTTP /api/call| IN["svc-inventory"]
+
+    GW -. "TrackDependency" .-> DB[("InMemory")]
+    OR -. "TrackDependency" .-> DB
+    CT -. "TrackDependency" .-> DB
+    PM -. "TrackDependency" .-> DB
+    IN -. "TrackDependency" .-> DB
+
+    classDef user fill:#107C10,stroke:#0B5A0B,color:#ffffff,stroke-width:2px;
+    classDef compute fill:#0F6CBD,stroke:#0A4A82,color:#ffffff,stroke-width:2px;
+    classDef data fill:#C43E1C,stroke:#8A2B12,color:#ffffff,stroke-width:2px;
+    class USER user;
+    class GW,OR,CT,PM,IN compute;
+    class DB data;
+```
+
+Drive the cascade from your machine (replace the FQDN with your gateway URL):
+
+```bash
+for i in $(seq 1 50); do
+  curl -s "http://<gateway-fqdn>:8080/api/call" > /dev/null
+  echo "request $i sent"
+done
+```
+
+### Reading the numbers on each node & edge
+
+Every node and edge on the map shows two values — and they mean different things:
+
+| What you see | Example | Meaning |
+|--------------|---------|---------|
+| **Call count** | `281 calls` | **Total** number of calls in the selected time range (not per-call). |
+| **Duration** | `74.1 ms` | **Average** time for a *single* call (not a sum). |
+| **Failure %** | `< 1%` | Share of calls that **failed** (error/HTTP 5xx). Lower is healthier. |
+| **Instances** | `1 instance` | Number of containers running that role (here, one ACI per service). |
+
+> **Why upstream nodes show a bigger duration:** `svc-gateway` (~149 ms) is *slower* than
+> `svc-catalog` (~74 ms) because the gateway's time **includes** waiting for its downstream
+> chain to respond. Each hop down the tree is faster because it waits on less.
+
+### What is the `InMemory (OTHER)` node?
+
+`InMemory` is **not** a deployed server, database, or container — it is a **simulated
+dependency**. It exists only as a string label inside the code:
+
+```csharp
+// Program.cs — every service runs this; it fakes a DB/cache call
+telemetry.TrackDependency("InMemory", "LocalWork", startTime, duration, success: true);
+```
+
+Because **all five** services execute these `TrackDependency("InMemory", ...)` lines, every
+node draws an edge to the **one shared `InMemory` node**. App Insights labels it `OTHER`
+because the dependency type isn't a recognized one (SQL, HTTP, etc.). In a real app this
+line would be an actual SQL/Redis/HTTP call — and the SDK would track it automatically the
+same way.
+
+> **Tip for a clean map:** set the time range to **Last 30 minutes** before presenting so
+> only the live mesh nodes show (old/deleted roles drop off once their data ages out).
 
 ---
 
